@@ -1,38 +1,134 @@
-import React, { useState } from "react";
-import { motion } from "motion/react";
-import { Plane, Globe, ShieldCheck, TrendingUp, Mail, Phone, Linkedin, MapPin, Calendar, CreditCard, Ship, FileText, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Plane, Globe, ShieldCheck, TrendingUp, Mail, Phone, Linkedin, MapPin, Calendar, CreditCard, Ship, FileText, CheckCircle2, Star, MessageSquare, ArrowLeft, MoreVertical, Edit, Trash2 } from "lucide-react";
+
+type Review = {
+  id: string;
+  name: string;
+  rating: number;
+  date: string;
+  text: string;
+};
+
+const INITIAL_REVIEWS: Review[] = [
+  { id: "1", name: "Ahmed Khan", rating: 5, date: "Oct 2025", text: "Yeamin made our Thailand trip unforgettable. Highly recommended!" },
+  { id: "2", name: "Sarah J.", rating: 5, date: "Jan 2026", text: "Professional service and great attention to detail. The Norway tour was magical." },
+  { id: "3", name: "David Miller", rating: 4, date: "Dec 2025", text: "Excellent planning for our family trip to Japan. Very responsive." },
+  { id: "4", name: "Maria Garcia", rating: 5, date: "Feb 2026", text: "The best travel consultant I've worked with. Everything was seamless." }
+];
 
 export default function App() {
+  const [currentPage, setCurrentPage] = useState<"home" | "reviews">("home");
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    const saved = localStorage.getItem("journey_beyond_reviews");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Ensure every review has a unique ID (fixes issues with old saved reviews)
+      return parsed.map((r: any) => ({
+        ...r,
+        id: r.id || Math.random().toString(36).substr(2, 9)
+      }));
+    }
+    return INITIAL_REVIEWS;
+  });
+
+  // Persist reviews to localStorage
+  useEffect(() => {
+    localStorage.setItem("journey_beyond_reviews", JSON.stringify(reviews));
+  }, [reviews]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
+  const addReview = (newReview: Review) => {
+    setReviews((prev) => {
+      const exists = prev.find(r => r.id === newReview.id);
+      if (exists) {
+        return prev.map(r => r.id === newReview.id ? newReview : r);
+      }
+      return [newReview, ...prev];
+    });
+  };
+
+  const deleteReview = (id: string) => {
+    setReviews((prev) => prev.filter(r => r.id !== id));
+  };
+
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <Navbar />
-      <Hero />
-      <About />
-      <TourActivities />
-      <Services />
-      <Projects />
-      <NorwayGallery />
-      <Workflow />
-      <Testimonials />
-      <Contact />
+    <div className="min-h-screen overflow-x-hidden bg-white">
+      <Navbar onNavigate={setCurrentPage} currentPage={currentPage} />
+      
+      <AnimatePresence mode="wait">
+        {currentPage === "home" ? (
+          <motion.div
+            key="home"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Hero />
+            <About />
+            <TourActivities />
+            <Services />
+            <Projects />
+            <NorwayGallery />
+            <Workflow />
+            <Testimonials reviews={reviews.slice(0, 3)} onNavigate={() => setCurrentPage("reviews")} />
+            <Contact />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="reviews"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ReviewsPage 
+              reviews={reviews} 
+              onAddReview={addReview} 
+              onDeleteReview={deleteReview}
+              onBack={() => setCurrentPage("home")} 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       <Footer />
     </div>
   );
 }
 
-function Navbar() {
+function Navbar({ onNavigate, currentPage }: { onNavigate: (page: "home" | "reviews") => void, currentPage: string }) {
   return (
-    <nav className="fixed top-0 w-full z-50 glass-card border-b border-gray-100">
+    <nav className="fixed top-0 w-full z-50 bg-black/20 backdrop-blur-lg border-b border-white/10">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Plane className="text-warm-orange w-6 h-6" />
-          <span className="font-serif text-xl font-bold tracking-tight">Journey Beyond</span>
-        </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <a href="#about" className="hover:text-sky-blue transition-colors">About</a>
-          <a href="#services" className="hover:text-sky-blue transition-colors">Services</a>
-          <a href="#projects" className="hover:text-sky-blue transition-colors">Projects</a>
-          <a href="#contact" className="bg-deep-blue text-white px-6 py-2 rounded-full hover:bg-sky-blue transition-all">Let's Talk</a>
+        <button 
+          onClick={() => onNavigate("home")}
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        >
+          <Plane className="text-amber-400 w-6 h-6" />
+          <span className="font-display text-xl font-bold tracking-tighter text-white">Journey Beyond</span>
+        </button>
+        <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest">
+          <button 
+            onClick={() => onNavigate("home")}
+            className={`${currentPage === "home" ? "text-emerald-400" : "text-white/70"} hover:text-white transition-colors`}
+          >
+            Home
+          </button>
+          <a href="#about" onClick={() => onNavigate("home")} className="text-white/70 hover:text-white transition-colors">About</a>
+          <a href="#services" onClick={() => onNavigate("home")} className="text-white/70 hover:text-white transition-colors">Services</a>
+          <button 
+            onClick={() => onNavigate("reviews")}
+            className={`${currentPage === "reviews" ? "text-emerald-400" : "text-white/70"} hover:text-white transition-colors flex items-center gap-2`}
+          >
+            Reviews
+          </button>
+          <a href="#contact" onClick={() => onNavigate("home")} className="bg-emerald-500 text-white px-8 py-2.5 rounded-full hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20">Let's Talk</a>
         </div>
       </div>
     </nav>
@@ -42,7 +138,20 @@ function Navbar() {
 function Hero() {
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-32 pb-20">
-      <div className="absolute inset-0 z-0 bg-slate-50 opacity-50" />
+      {/* High-Resolution Vibrant Background */}
+      <div className="absolute inset-0 z-0">
+        <motion.img 
+          initial={{ scale: 1 }}
+          animate={{ scale: 1.05 }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+          src="https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?auto=format&fit=crop&w=1920&q=100" 
+          alt="Dog Sledding in Tromsø, Norway" 
+          className="w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+        />
+        {/* Cinematic Overlay - Refined for maximum clarity without blur */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />
+      </div>
       
       <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
         <motion.div
@@ -51,29 +160,44 @@ function Hero() {
           transition={{ duration: 0.8 }}
           className="flex flex-col items-center"
         >
-          {/* Reduced Size Hero Image */}
-          <div className="mb-8 relative">
-            <div className="absolute inset-0 bg-sky-400 blur-2xl opacity-20 rounded-full" />
-            <img 
-              src="https://i.ibb.co.com/YTNq2cnW/Whats-App-Image-2026-02-25-at-9-51-12-PM.jpg" 
-              alt="Journey Beyond the Border" 
-              className="relative w-48 h-48 md:w-64 md:h-64 object-cover rounded-full border-4 border-white shadow-2xl mx-auto"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-
-          <span className="text-warm-orange font-bold tracking-widest uppercase text-xs mb-4 block">Your Dedicated Travel Consultant</span>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-deep-blue mb-6 leading-tight">
-            Turning Journeys into <br /><span className="italic text-sky-blue">Experiences</span>
+          <span className="text-amber-400 font-bold tracking-[0.3em] uppercase text-xs mb-6 drop-shadow-lg font-display">Your Dedicated Travel Consultant</span>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-[1.1] drop-shadow-2xl font-display tracking-tight">
+            Turning Journeys into <br />
+            <span className="relative inline-block">
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="italic font-serif font-normal text-white inline-block"
+              >
+                {/* Typewriter animation for "Experiences" */}
+                {"Experiences".split("").map((char, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{
+                      duration: 0.1,
+                      delay: 0.5 + index * 0.1,
+                      repeat: Infinity,
+                      repeatDelay: 5,
+                      repeatType: "reverse"
+                    }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </motion.span>
+            </span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto font-light drop-shadow-md leading-relaxed">
             Journey Beyond the Border creates seamless, memorable, and value-driven travel experiences across Asia and beyond.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#projects" className="w-full sm:w-auto bg-deep-blue text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-sky-blue transition-all shadow-xl">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <a href="#projects" className="w-full sm:w-auto bg-emerald-500 text-white px-10 py-5 rounded-full text-lg font-bold hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:scale-105">
               Explore Projects
             </a>
-            <a href="#contact" className="w-full sm:w-auto border-2 border-deep-blue text-deep-blue px-8 py-4 rounded-full text-lg font-medium hover:bg-deep-blue hover:text-white transition-all">
+            <a href="#contact" className="w-full sm:w-auto bg-white/10 backdrop-blur-md border border-white/30 text-white px-10 py-5 rounded-full text-lg font-bold hover:bg-white hover:text-deep-blue transition-all shadow-xl hover:scale-105">
               Get a Consultation
             </a>
           </div>
@@ -83,10 +207,10 @@ function Hero() {
       <motion.div 
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-gray-400"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-deep-blue/40"
       >
-        <div className="w-6 h-10 border-2 border-gray-300 rounded-full flex justify-center pt-2">
-          <div className="w-1 h-2 bg-gray-300 rounded-full" />
+        <div className="w-6 h-10 border-2 border-deep-blue/20 rounded-full flex justify-center pt-2">
+          <div className="w-1 h-2 bg-deep-blue/20 rounded-full" />
         </div>
       </motion.div>
     </section>
@@ -482,33 +606,291 @@ function Workflow() {
   );
 }
 
-function Testimonials() {
-  const reviews = [
-    { text: "Very professional and reliable service. Everything was perfectly managed.", author: "Corporate Client" },
-    { text: "Great communication and excellent tour planning support.", author: "Group Traveler" },
-    { text: "A trustworthy travel consultant who truly understands client needs.", author: "Honeymoon Couple" }
-  ];
-
+function Testimonials({ reviews, onNavigate }: { reviews: Review[], onNavigate: () => void }) {
   return (
-    <section className="section-padding overflow-hidden">
+    <section className="section-padding overflow-hidden bg-slate-50/50">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-4xl font-bold mb-16 text-center">What Clients Say</h2>
-        <div className="flex flex-wrap justify-center gap-8">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">What Clients Say</h2>
+          <p className="text-gray-500 max-w-2xl mx-auto">Real experiences from travelers who journeyed with us.</p>
+        </div>
+        
+        <div className="flex flex-wrap justify-center gap-8 mb-16">
           {reviews.map((review, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="max-w-md p-10 rounded-3xl bg-sky-50 border border-sky-100 italic text-lg text-deep-blue"
+              className="max-w-md p-10 rounded-3xl bg-white border border-gray-100 shadow-sm italic text-lg text-deep-blue relative"
             >
+              <div className="absolute -top-4 -left-4 w-10 h-10 bg-sky-blue text-white rounded-full flex items-center justify-center text-2xl font-serif shadow-lg">“</div>
+              <div className="flex gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`w-4 h-4 ${i < review.rating ? "text-warm-orange fill-warm-orange" : "text-gray-200"}`} />
+                ))}
+              </div>
               "{review.text}"
-              <div className="mt-6 not-italic font-bold text-sm uppercase tracking-widest text-warm-orange">— {review.author}</div>
+              <div className="mt-6 not-italic font-bold text-sm uppercase tracking-widest text-warm-orange flex items-center gap-2">
+                <div className="w-6 h-0.5 bg-warm-orange/30" />
+                {review.name}
+              </div>
             </motion.div>
           ))}
         </div>
+
+        <div className="text-center">
+          <button 
+            onClick={onNavigate}
+            className="inline-flex items-center gap-3 bg-white border-2 border-deep-blue text-deep-blue px-8 py-4 rounded-full text-lg font-bold hover:bg-deep-blue hover:text-white transition-all shadow-lg group"
+          >
+            <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            View All & Give Review
+          </button>
+        </div>
       </div>
     </section>
+  );
+}
+
+function ReviewsPage({ reviews, onAddReview, onDeleteReview, onBack }: { reviews: Review[], onAddReview: (review: Review) => void, onDeleteReview: (id: string) => void, onBack: () => void }) {
+  const [rating, setRating] = useState(5);
+  const [hover, setHover] = useState(0);
+  const [formData, setFormData] = useState({
+    id: "",
+    name: "",
+    review: ""
+  });
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null);
+    if (activeMenu) {
+      window.addEventListener('click', handleClickOutside);
+    }
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [activeMenu]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.review) return;
+
+    const newReview: Review = {
+      id: formData.id || Math.random().toString(36).substr(2, 9),
+      name: formData.name,
+      rating: rating,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      text: formData.review
+    };
+
+    onAddReview(newReview);
+    setIsSubmitted(true);
+    setFormData({ id: "", name: "", review: "" });
+    setRating(5);
+
+    // Reset success message after 5 seconds
+    setTimeout(() => setIsSubmitted(false), 5000);
+  };
+
+  const handleEdit = (rev: Review) => {
+    setFormData({
+      id: rev.id,
+      name: rev.name,
+      review: rev.text
+    });
+    setRating(rev.rating);
+    setActiveMenu(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-12">
+        <button 
+          onClick={onBack}
+          className="flex items-center gap-2 text-deep-blue font-bold hover:text-sky-blue transition-colors group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          Back to Home
+        </button>
+        <button 
+          onClick={() => setIsAdmin(!isAdmin)}
+          className={`text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border transition-all ${isAdmin ? 'bg-deep-blue text-white border-deep-blue' : 'text-gray-400 border-gray-200 hover:border-deep-blue hover:text-deep-blue'}`}
+        >
+          {isAdmin ? 'Admin Mode: ON' : 'Admin Mode: OFF'}
+        </button>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-20">
+        {/* Left: Read Reviews */}
+        <div>
+          <h2 className="text-4xl font-bold text-deep-blue mb-4 font-serif">Client Experiences</h2>
+          <p className="text-gray-500 mb-12">Read what our travelers have to say about their journeys.</p>
+
+          <div className="space-y-8">
+            {reviews.map((rev, idx) => (
+              <motion.div 
+                key={rev.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative group"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-bold text-deep-blue text-lg">{rev.name}</h4>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">{rev.date}</p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < rev.rating ? "text-warm-orange fill-warm-orange" : "text-gray-200"}`} />
+                      ))}
+                    </div>
+                    
+                    {/* Three-dot menu */}
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent immediate closing from the window listener
+                          setActiveMenu(activeMenu === rev.id ? null : rev.id);
+                        }}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-deep-blue"
+                      >
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {activeMenu === rev.id && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="absolute right-0 mt-2 w-32 bg-white border border-gray-100 rounded-xl shadow-xl z-30 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()} // Prevent menu clicks from closing the menu
+                          >
+                            <button 
+                              onClick={() => handleEdit(rev)}
+                              className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50"
+                            >
+                              <Edit className="w-4 h-4" /> Edit
+                            </button>
+                            {isAdmin && (
+                              <button 
+                                onClick={() => {
+                                  onDeleteReview(rev.id);
+                                  setActiveMenu(null);
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete
+                              </button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-600 leading-relaxed italic">"{rev.text}"</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Give Review */}
+        <div>
+          <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-200 sticky top-32">
+            <h3 className="text-2xl font-bold text-deep-blue mb-2">
+              {formData.id ? 'Edit Your Experience' : 'Share Your Experience'}
+            </h3>
+            <p className="text-gray-500 mb-8 text-sm">Your feedback helps us improve and helps others plan their dream trips.</p>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-wider text-deep-blue">Your Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      className="focus:outline-none transition-transform hover:scale-110"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHover(star)}
+                      onMouseLeave={() => setHover(0)}
+                    >
+                      <Star 
+                        className={`w-10 h-10 ${(hover || rating) >= star ? "text-warm-orange fill-warm-orange" : "text-gray-300"}`} 
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-deep-blue">Full Name</label>
+                <input 
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full p-4 bg-white rounded-xl border border-slate-200 focus:border-sky-blue focus:outline-none transition-colors"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider text-deep-blue">Your Review</label>
+                <textarea 
+                  required
+                  value={formData.review}
+                  onChange={(e) => setFormData({ ...formData, review: e.target.value })}
+                  className="w-full p-4 bg-white rounded-xl border border-slate-200 focus:border-sky-blue focus:outline-none transition-colors h-32"
+                  placeholder="Tell us about your trip..."
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="submit"
+                  className="flex-1 bg-deep-blue text-white py-4 rounded-xl font-bold hover:bg-sky-blue transition-all shadow-lg flex items-center justify-center gap-3"
+                >
+                  {formData.id ? 'Update Review' : 'Submit Review'}
+                </button>
+                {formData.id && (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setFormData({ id: "", name: "", review: "" });
+                      setRating(5);
+                    }}
+                    className="px-6 py-4 bg-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-300 transition-all"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+              
+              <AnimatePresence>
+                {isSubmitted && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="p-4 bg-green-100 text-green-700 rounded-xl text-center font-bold text-sm"
+                  >
+                    {formData.id ? 'Review updated successfully!' : 'Thank you! Your review has been posted.'}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
