@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Journey Beyond the Border
 
-# Run and deploy your AI Studio app
+This is a premium, cinematic travel consulting website built with React, Vite, and Tailwind CSS.
 
-This contains everything you need to run your app locally.
+## 🚀 Deployment to Vercel
 
-View your app in AI Studio: https://ai.studio/apps/2b426fab-45d9-4429-8b86-aae98fdc313c
+1. **GitHub**: Upload this code to a new GitHub repository.
+2. **Vercel**: Connect your GitHub account to [Vercel](https://vercel.com).
+3. **Import**: Import the repository into Vercel.
+4. **Environment Variables**:
+   - Add `GEMINI_API_KEY` in the Vercel project settings if you use AI features.
+5. **Deploy**: Vercel will automatically build and deploy your site.
 
-## Run Locally
+## 🛠️ Tech Stack
 
-**Prerequisites:**  Node.js
+- **React 19**
+- **Vite**
+- **Tailwind CSS 4**
+- **Motion** (Animations)
+- **Lucide React** (Icons)
 
+## 📈 SEO
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+The site is pre-configured with SEO metadata in `index.html` and a `vercel.json` for SPA routing.
